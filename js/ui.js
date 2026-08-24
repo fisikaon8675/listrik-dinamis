@@ -1,4 +1,13 @@
 // ==========================================
+// STATUS GAME (INVENTARIS PEMAIN)
+// ==========================================
+window.gameState = {
+    punyaResistor: false,
+    punyaBaterai: false,
+    punyaInti: false
+};
+
+// ==========================================
 // 1. INISIALISASI ELEMEN HTML
 // ==========================================
 const uiLayer = document.getElementById('ui-layer');
@@ -51,6 +60,7 @@ window.checkOhmAnswer = function() {
     if (answer === "100") {
         feedback.style.color = "green";
         feedback.innerText = "Benar! Brankas Terbuka. Kamu mendapatkan Item: Resistor Emas!";
+        window.gameState.punyaResistor = true; // Simpan ke inventaris
         setTimeout(() => uiLayer.classList.add('hidden'), 2500);
     } else {
         feedback.style.color = "red";
@@ -115,7 +125,7 @@ window.checkTTS = function() {
     
     for (let id in kunciJawaban) {
         let inputEl = document.getElementById(id);
-        if (!inputEl) continue; // Mencegah error jika elemen tidak ditemukan
+        if (!inputEl) continue; 
         
         let nilaiInput = inputEl.value.toUpperCase();
         if (nilaiInput !== kunciJawaban[id]) {
@@ -128,6 +138,7 @@ window.checkTTS = function() {
     if (benarSemua) {
         feedback.style.color = "green";
         feedback.innerText = "Luar biasa! Teka-teki berhasil dipecahkan. Mendapat Item: Baterai Paralel!";
+        window.gameState.punyaBaterai = true; // Simpan ke inventaris
         setTimeout(() => uiLayer.classList.add('hidden'), 3000);
     } else {
         feedback.style.color = "red";
@@ -189,9 +200,42 @@ window.checkJouleAnswer = function() {
     if (selectedValue === "600") {
         feedback.style.color = "green";
         feedback.innerText = "Tepat Sekali! W = P x t = 10 x 60 = 600 Joule. Mendapat Item: Generator Inti!";
+        window.gameState.punyaInti = true; // Simpan ke inventaris
         setTimeout(() => uiLayer.classList.add('hidden'), 3000);
     } else {
         feedback.style.color = "red";
         feedback.innerText = "Jawaban kurang tepat. Ingat rumusnya: W = P x t.";
+    }
+}
+
+// ==========================================
+// 5. LOGIKA GENERATOR UTAMA (FINISH)
+// ==========================================
+window.openModalGenerator = function() {
+    uiLayer.classList.remove('hidden');
+    challengeContent.classList.add('hidden');
+    materiContent.classList.remove('hidden');
+    btnNext.classList.add('hidden'); // Sembunyikan tombol lanjut karena ini garis akhir
+    
+    npcName.innerText = "Generator Listrik Utama";
+    
+    // Mengecek apakah pemain sudah menyelesaikan ketiga tantangan
+    if (window.gameState.punyaResistor && window.gameState.punyaBaterai && window.gameState.punyaInti) {
+        materiContent.innerHTML = `
+            <h3 style="color: green;">🎉 MISI BERHASIL! 🎉</h3>
+            <p>Kamu telah memasukkan Resistor Emas, Baterai Paralel, dan Generator Inti ke dalam mesin.</p>
+            <p><strong>Generator Utama berhasil menyala! Listrik kembali mengalir ke seluruh pulau!</strong></p>
+            <p>Terima kasih telah bermain ElectroQuest 3D. Kamu sekarang adalah ahli Fisika Listrik Dinamis!</p>
+        `;
+    } else {
+        materiContent.innerHTML = `
+            <h3 style="color: red;">⚠️ Akses Ditolak! ⚠️</h3>
+            <p>Generator ini kekurangan daya. Kamu harus mendatangi ke-3 Post NPC dan menyelesaikan tantangan mereka untuk mendapatkan komponen yang dibutuhkan!</p>
+            <ul style="text-align: left; margin-top: 15px;">
+                <li>${window.gameState.punyaResistor ? '✅' : '❌'} Resistor Emas (Post 1: Kotak Kuning)</li>
+                <li>${window.gameState.punyaBaterai ? '✅' : '❌'} Baterai Paralel (Post 2: Kotak Hijau)</li>
+                <li>${window.gameState.punyaInti ? '✅' : '❌'} Generator Inti (Post 3: Kotak Merah)</li>
+            </ul>
+        `;
     }
 }
