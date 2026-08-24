@@ -7,26 +7,29 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Container untuk 3D -->
+    <!-- Container untuk memuat Dunia 3D -->
     <div id="game-container"></div>
 
-    <!-- UI Overlay (Muncul saat dekat NPC) -->
+    <!-- UI Overlay (Muncul saat pemain menekan "E" di dekat NPC/Generator) -->
     <div id="ui-layer" class="hidden">
         <div class="modal">
             <h2 id="npc-name">Nama NPC</h2>
-            <div id="materi-content">
-                <!-- Materi fisika akan di-inject ke sini via JS -->
-            </div>
-            <div id="challenge-content" class="hidden">
-                <!-- Tantangan akan di-inject ke sini -->
-            </div>
+            
+            <div id="materi-content"></div>
+            <div id="challenge-content" class="hidden"></div>
+            
             <button id="btn-next">Lanjut ke Tantangan</button>
             <button id="btn-close">Tutup</button>
         </div>
     </div>
 
-    <!-- Import Three.js -->
+    <!-- 1. IMPORT CORE THREE.JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- 2. IMPORT GLTFLOADER (Ini yang akan memperbaiki error Anda!) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <!-- 3. SCRIPT GAME KITA -->
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
 </body>
