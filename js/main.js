@@ -132,7 +132,7 @@ function createNPC(x, z, fallbackColor, modelPath = null) {
     return npcHitbox;
 }
 
-// Buat ke-3 NPC di lokasi yang berbeda di sepanjang jalan
+// Buat ke-3 NPC di lokasi yang berbeda di sepanjang jalan (SUDAH DIPERBAIKI TANDA KUTIPNYA)
 const npc1 = createNPC(4, -5, 0xffff00, 'assets/npc1.glb');  // Post 1: Kuning
 const npc2 = createNPC(-4, -15, 0x00ff00, 'assets/npc2.glb'); // Post 2: Hijau
 const npc3 = createNPC(4, -25, 0xff0000, 'assets/npc3.glb');  // Post 3: Merah
