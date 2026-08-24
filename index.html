@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElectroQuest 3D</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Container untuk 3D -->
+    <div id="game-container"></div>
+
+    <!-- UI Overlay (Muncul saat dekat NPC) -->
+    <div id="ui-layer" class="hidden">
+        <div class="modal">
+            <h2 id="npc-name">Nama NPC</h2>
+            <div id="materi-content">
+                <!-- Materi fisika akan di-inject ke sini via JS -->
+            </div>
+            <div id="challenge-content" class="hidden">
+                <!-- Tantangan akan di-inject ke sini -->
+            </div>
+            <button id="btn-next">Lanjut ke Tantangan</button>
+            <button id="btn-close">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Import Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
