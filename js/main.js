@@ -27,7 +27,7 @@ plane.rotation.x = -Math.PI / 2; // Memutar lantai agar mendatar
 scene.add(plane);
 
 // ==========================================
-// 4. MEMBUAT PEMAIN & NPC
+// 4. MEMBUAT PEMAIN, NPC & GENERATOR
 // ==========================================
 // Pemain (Kotak Biru)
 const playerGeo = new THREE.BoxGeometry(1, 1, 1);
@@ -57,6 +57,13 @@ const npc3 = new THREE.Mesh(npcGeo, npc3Mat);
 npc3.position.set(0, 1, -12);
 scene.add(npc3);
 
+// GENERATOR UTAMA (GARIS FINISH - Silinder Putih)
+const genGeo = new THREE.CylinderGeometry(2, 2, 4, 32); 
+const genMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+const mainGenerator = new THREE.Mesh(genGeo, genMat);
+mainGenerator.position.set(10, 2, -15); 
+scene.add(mainGenerator);
+
 // Mengatur Posisi Awal Kamera
 camera.position.set(0, 5, 10);
 camera.lookAt(player.position);
@@ -78,18 +85,21 @@ document.addEventListener('keydown', (e) => {
         // Mencegah tombol 'E' memicu sesuatu jika UI popup sedang terbuka
         if (!uiLayer.classList.contains('hidden')) return;
 
-        // Hitung jarak pemain ke masing-masing NPC
+        // Hitung jarak pemain ke masing-masing NPC & Generator
         const distToNpc1 = player.position.distanceTo(npc1.position);
         const distToNpc2 = player.position.distanceTo(npc2.position);
         const distToNpc3 = player.position.distanceTo(npc3.position);
+        const distToGen = player.position.distanceTo(mainGenerator.position); 
         
-        // Buka UI yang sesuai jika pemain cukup dekat (jarak < 3)
+        // Buka UI yang sesuai jika pemain cukup dekat
         if (distToNpc1 < 3) {
             openModalOhm();
         } else if (distToNpc2 < 3) {
             openModalKirchhoff();
         } else if (distToNpc3 < 3) {
             openModalJoule();
+        } else if (distToGen < 4) { // Jarak interaksi generator disetel sedikit lebih jauh (4)
+            openModalGenerator();
         }
     }
 });
