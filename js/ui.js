@@ -1,241 +1,197 @@
 // ==========================================
-// STATUS GAME (INVENTARIS PEMAIN)
+// 1. SETUP SCENE, CAMERA, DAN RENDERER
 // ==========================================
-window.gameState = {
-    punyaResistor: false,
-    punyaBaterai: false,
-    punyaInti: false
-};
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB); // Warna langit biru
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.getElementById('game-container').appendChild(renderer.domElement);
 
 // ==========================================
-// 1. INISIALISASI ELEMEN HTML
+// 2. PENCAHAYAAN (LIGHTING)
 // ==========================================
-const uiLayer = document.getElementById('ui-layer');
-const npcName = document.getElementById('npc-name');
-const materiContent = document.getElementById('materi-content');
-const challengeContent = document.getElementById('challenge-content');
-const btnNext = document.getElementById('btn-next');
-const btnClose = document.getElementById('btn-close');
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5, 10, 5);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0x606060)); // Cahaya merata
 
-// Event listener untuk tombol Lanjut dan Tutup
-btnNext.addEventListener('click', () => {
-    materiContent.classList.add('hidden');
-    challengeContent.classList.remove('hidden');
-    btnNext.classList.add('hidden');
+// ==========================================
+// 3. MEMBUAT LINGKUNGAN YANG KAYA
+// ==========================================
+// Lantai Rumput
+const planeGeo = new THREE.PlaneGeometry(100, 100);
+const planeMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
+const plane = new THREE.Mesh(planeGeo, planeMat);
+plane.rotation.x = -Math.PI / 2;
+scene.add(plane);
+
+// Membuat Jalan Utama (Aspal)
+const roadGeo = new THREE.PlaneGeometry(8, 60);
+const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333 }); 
+const road = new THREE.Mesh(roadGeo, roadMat);
+road.rotation.x = -Math.PI / 2;
+road.position.set(0, 0.05, -15); 
+scene.add(road);
+
+// Fungsi Pembuat Pohon 
+function createTree(x, z) {
+    const tree = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.5, 2), new THREE.MeshStandardMaterial({ color: 0x8B4513 }));
+    trunk.position.y = 1;
+    tree.add(trunk);
+    const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 4, 8), new THREE.MeshStandardMaterial({ color: 0x006400 }));
+    leaves.position.y = 3.5;
+    tree.add(leaves);
+    tree.position.set(x, 0, z);
+    scene.add(tree);
+}
+
+// Menanam pohon
+createTree(5, -2);
+createTree(-5, -6);
+createTree(6, -10);
+createTree(-6, -15);
+createTree(5, -25);
+createTree(-5, -30);
+
+// Fungsi Pembuat Bangunan Lab
+function createBuilding(x, z, width, height, depth, colorHex) {
+    const building = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), new THREE.MeshStandardMaterial({ color: colorHex }));
+    building.position.set(x, height / 2, z);
+    scene.add(building);
+}
+
+createBuilding(-15, -20, 10, 15, 10, 0x555555); 
+createBuilding(15, -25, 8, 10, 8, 0x888888);  
+
+// ==========================================
+// 4. PEMAIN, NPC & LOADER MODEL 3D
+// ==========================================
+const loader = new THREE.GLTFLoader();
+
+// --- PEMAIN ---
+const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+const playerMat = new THREE.MeshBasicMaterial({ visible: false }); // Hitbox
+const player = new THREE.Mesh(playerGeo, playerMat);
+player.position.set(0, 1, 5); 
+scene.add(player);
+
+// Selalu tambahkan kotak biru sebagai visual cadangan
+const fallbackPlayerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({color: 0x0000ff}));
+player.add(fallbackPlayerMesh); 
+
+// Coba muat model 3D (Akan diabaikan tanpa error mencolok jika file tidak ada)
+loader.load(
+    'assets/player.glb', 
+    function(gltf) {
+        const model = gltf.scene;
+        model.scale.set(1, 1, 1); 
+        model.position.y = -1; 
+        player.add(model); 
+        player.remove(fallbackPlayerMesh); // Hapus kotak biru jika berhasil
+    },
+    undefined,
+    function(error) { console.warn("Model player.glb tidak ditemukan, menggunakan kotak biru."); }
+);
+
+// --- FUNGSI NPC ANTI-ERROR ---
+function createNPC(x, z, fallbackColor, modelPath) {
+    const npcHitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 2, 1.5),
+        new THREE.MeshBasicMaterial({ visible: false }) 
+    );
+    npcHitbox.position.set(x, 1, z);
+    scene.add(npcHitbox);
+
+    // Selalu tambahkan kotak warna sebagai visual cadangan
+    const visual = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 1.5), new THREE.MeshStandardMaterial({color: fallbackColor}));
+    npcHitbox.add(visual);
+
+    // Coba muat model 3D
+    loader.load(
+        modelPath, 
+        function(gltf) {
+            const model = gltf.scene;
+            model.scale.set(1, 1, 1);
+            model.position.y = -1;
+            npcHitbox.add(model);
+            npcHitbox.remove(visual); // Hapus kotak jika model berhasil dimuat
+        },
+        undefined,
+        function(error) { console.warn("Model " + modelPath + " tidak ditemukan, menggunakan kotak warna."); }
+    );
+    
+    return npcHitbox;
+}
+
+// Buat NPC
+const npc1 = createNPC(4, -5, 0xffff00, 'assets/npc1.glb');  
+const npc2 = createNPC(-4, -15, 0x00ff00, 'assets/npc2.glb'); 
+const npc3 = createNPC(4, -25, 0xff0000, 'assets/npc3.glb');  
+
+// --- GENERATOR UTAMA ---
+const genGeo = new THREE.CylinderGeometry(2, 2, 4, 32); 
+const genMat = new THREE.MeshStandardMaterial({ color: 0x00ffff }); 
+const mainGenerator = new THREE.Mesh(genGeo, genMat);
+mainGenerator.position.set(0, 2, -35); 
+scene.add(mainGenerator);
+
+// Kamera Awal
+camera.position.set(0, 5, 10);
+camera.lookAt(player.position);
+
+// ==========================================
+// 5. KONTROL DAN INTERAKSI
+// ==========================================
+const keys = { w: false, a: false, s: false, d: false };
+
+document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'e') {
+        const uiLayer = document.getElementById('ui-layer');
+        if (!uiLayer.classList.contains('hidden')) return;
+
+        const distToNpc1 = player.position.distanceTo(npc1.position);
+        const distToNpc2 = player.position.distanceTo(npc2.position);
+        const distToNpc3 = player.position.distanceTo(npc3.position);
+        const distToGen = player.position.distanceTo(mainGenerator.position); 
+        
+        if (distToNpc1 < 3) openModalOhm();
+        else if (distToNpc2 < 3) openModalKirchhoff();
+        else if (distToNpc3 < 3) openModalJoule();
+        else if (distToGen < 4) openModalGenerator();
+    }
 });
 
-btnClose.addEventListener('click', () => {
-    uiLayer.classList.add('hidden');
+window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
 });
 
 // ==========================================
-// 2. LOGIKA NPC 1: PROF. OHM (BREAK CODE)
+// 6. GAME LOOP (ANIMASI)
 // ==========================================
-window.openModalOhm = function() {
-    uiLayer.classList.remove('hidden');
-    challengeContent.classList.add('hidden');
-    materiContent.classList.remove('hidden');
-    btnNext.classList.remove('hidden');
-    
-    npcName.innerText = "Post 1: Prof. Ohm";
-    materiContent.innerHTML = `
-        <h3>Hukum Ohm</h3>
-        <p>Hukum Ohm menyatakan bahwa tegangan (V) dalam sebuah rangkaian berbanding lurus dengan arus (I) dan hambatan (R).</p>
-        <p><strong>Rumus: V = I x R</strong></p>
-    `;
+function animate() {
+    requestAnimationFrame(animate);
 
-    challengeContent.innerHTML = `
-        <h3>Break the Code!</h3>
-        <p>Sebuah rangkaian memiliki Arus (I) = 2 A, dan Hambatan (R) = 50 Ohm. Berapa Tegangan (V) yang dibutuhkan untuk membuka brankas ini?</p>
-        <input type="number" id="answer-ohm" placeholder="Masukkan nilai V">
-        <button onclick="checkOhmAnswer()">Buka Kunci</button>
-        <p id="feedback-ohm"></p>
-    `;
+    const speed = 0.15;
+    
+    if (keys.w) player.position.z -= speed;
+    if (keys.s) player.position.z += speed;
+    if (keys.a) player.position.x -= speed;
+    if (keys.d) player.position.x += speed;
+
+    camera.position.x = player.position.x;
+    camera.position.y = player.position.y + 4;
+    camera.position.z = player.position.z + 8;
+    camera.lookAt(player.position);
+
+    renderer.render(scene, camera);
 }
 
-window.checkOhmAnswer = function() {
-    const answer = document.getElementById('answer-ohm').value;
-    const feedback = document.getElementById('feedback-ohm');
-    
-    if (answer === "100") {
-        feedback.style.color = "green";
-        feedback.innerText = "Benar! Brankas Terbuka. Kamu mendapatkan Item: Resistor Emas!";
-        window.gameState.punyaResistor = true; // Simpan ke inventaris
-        setTimeout(() => uiLayer.classList.add('hidden'), 2500);
-    } else {
-        feedback.style.color = "red";
-        feedback.innerText = "Salah! Ingat rumusnya: V = I x R.";
-    }
-}
-
-// ==========================================
-// 3. LOGIKA NPC 2: TEKNISI KIRCHHOFF (TTS)
-// ==========================================
-window.openModalKirchhoff = function() {
-    uiLayer.classList.remove('hidden');
-    challengeContent.classList.add('hidden');
-    materiContent.classList.remove('hidden');
-    btnNext.classList.remove('hidden');
-    
-    npcName.innerText = "Post 2: Teknisi Kirchhoff";
-    materiContent.innerHTML = `
-        <h3>Rangkaian Seri & Paralel</h3>
-        <p><strong>Seri:</strong> Arus yang mengalir sama di setiap titik. Hambatan total bertambah (R = R1 + R2).</p>
-        <p><strong>Paralel:</strong> Tegangan sama di setiap cabang. Hambatan total mengecil (1/R = 1/R1 + 1/R2).</p>
-    `;
-
-    challengeContent.innerHTML = `
-        <h3>Teka-Teki Silang Listrik</h3>
-        <div class="tts-container">
-            <div class="tts-clues">
-                <p><strong>1 Mendatar:</strong> Rangkaian yang arusnya sama di setiap komponennya.</p>
-                <p><strong>2 Menurun:</strong> Rangkaian yang tegangannya sama di setiap cabangnya.</p>
-            </div>
-            
-            <div class="tts-grid">
-                <!-- Baris 1 -->
-                <div class="tts-empty"></div><div class="tts-empty"></div><input type="text" id="c-0-2" maxlength="1"><div class="tts-empty"></div>
-                <!-- Baris 2 -->
-                <div class="tts-empty"></div><div class="tts-empty"></div><input type="text" id="c-1-2" maxlength="1"><div class="tts-empty"></div>
-                <!-- Baris 3 (SERI bersilangan P-A-R-A-L-E-L) -->
-                <input type="text" id="c-2-0" maxlength="1"><input type="text" id="c-2-1" maxlength="1"><input type="text" id="c-2-2" maxlength="1"><input type="text" id="c-2-3" maxlength="1">
-                <!-- Baris 4 -->
-                <div class="tts-empty"></div><div class="tts-empty"></div><input type="text" id="c-3-2" maxlength="1"><div class="tts-empty"></div>
-                <!-- Baris 5 -->
-                <div class="tts-empty"></div><div class="tts-empty"></div><input type="text" id="c-4-2" maxlength="1"><div class="tts-empty"></div>
-                <!-- Baris 6 -->
-                <div class="tts-empty"></div><div class="tts-empty"></div><input type="text" id="c-5-2" maxlength="1"><div class="tts-empty"></div>
-                <!-- Baris 7 -->
-                <div class="tts-empty"></div><div class="tts-empty"></div><input type="text" id="c-6-2" maxlength="1"><div class="tts-empty"></div>
-            </div>
-        </div>
-        <button onclick="checkTTS()">Cek Jawaban</button>
-        <p id="tts-feedback"></p>
-    `;
-}
-
-window.checkTTS = function() {
-    const kunciJawaban = {
-        'c-0-2': 'P', 'c-1-2': 'A', 
-        'c-2-0': 'S', 'c-2-1': 'E', 'c-2-2': 'R', 'c-2-3': 'I', 
-        'c-3-2': 'A', 'c-4-2': 'L', 'c-5-2': 'E', 'c-6-2': 'L'
-    };
-    
-    let benarSemua = true;
-    
-    for (let id in kunciJawaban) {
-        let inputEl = document.getElementById(id);
-        if (!inputEl) continue; 
-        
-        let nilaiInput = inputEl.value.toUpperCase();
-        if (nilaiInput !== kunciJawaban[id]) {
-            benarSemua = false;
-            break;
-        }
-    }
-    
-    const feedback = document.getElementById('tts-feedback');
-    if (benarSemua) {
-        feedback.style.color = "green";
-        feedback.innerText = "Luar biasa! Teka-teki berhasil dipecahkan. Mendapat Item: Baterai Paralel!";
-        window.gameState.punyaBaterai = true; // Simpan ke inventaris
-        setTimeout(() => uiLayer.classList.add('hidden'), 3000);
-    } else {
-        feedback.style.color = "red";
-        feedback.innerText = "Masih ada huruf yang salah atau kosong. Coba periksa lagi!";
-    }
-}
-
-// ==========================================
-// 4. LOGIKA NPC 3: DR. JOULE (PILIHAN GANDA)
-// ==========================================
-window.openModalJoule = function() {
-    uiLayer.classList.remove('hidden');
-    challengeContent.classList.add('hidden');
-    materiContent.classList.remove('hidden');
-    btnNext.classList.remove('hidden');
-    
-    npcName.innerText = "Post 3: Dr. Joule";
-    materiContent.innerHTML = `
-        <h3>Daya & Energi Listrik</h3>
-        <p><strong>Daya (P):</strong> Laju energi listrik yang digunakan. Dirumuskan sebagai <strong>P = V x I</strong>.</p>
-        <p><strong>Energi (W):</strong> Total daya yang digunakan selama waktu (t) tertentu. Dirumuskan sebagai <strong>W = P x t</strong>.</p>
-    `;
-
-    challengeContent.innerHTML = `
-        <h3>Kuis Daya & Energi</h3>
-        <p>Berapa energi yang digunakan oleh lampu <strong>10 Watt</strong> yang menyala selama <strong>60 detik</strong>?</p>
-        
-        <div style="display:flex; flex-direction:column; gap:10px; margin-top:15px; text-align: left; padding: 10px;">
-            <label><input type="radio" name="kuis-joule" value="10"> A) 10 Joule</label>
-            <label><input type="radio" name="kuis-joule" value="60"> B) 60 Joule</label>
-            <label><input type="radio" name="kuis-joule" value="600"> C) 600 Joule</label>
-            <label><input type="radio" name="kuis-joule" value="6000"> D) 6000 Joule</label>
-        </div>
-        
-        <button onclick="checkJouleAnswer()">Pilih Jawaban</button>
-        <p id="joule-feedback"></p>
-    `;
-}
-
-window.checkJouleAnswer = function() {
-    const options = document.getElementsByName('kuis-joule');
-    let selectedValue = null;
-    
-    for (const opt of options) {
-        if (opt.checked) {
-            selectedValue = opt.value;
-            break;
-        }
-    }
-    
-    const feedback = document.getElementById('joule-feedback');
-    
-    if (!selectedValue) {
-        feedback.style.color = "orange";
-        feedback.innerText = "Silakan pilih salah satu jawaban terlebih dahulu!";
-        return;
-    }
-    
-    if (selectedValue === "600") {
-        feedback.style.color = "green";
-        feedback.innerText = "Tepat Sekali! W = P x t = 10 x 60 = 600 Joule. Mendapat Item: Generator Inti!";
-        window.gameState.punyaInti = true; // Simpan ke inventaris
-        setTimeout(() => uiLayer.classList.add('hidden'), 3000);
-    } else {
-        feedback.style.color = "red";
-        feedback.innerText = "Jawaban kurang tepat. Ingat rumusnya: W = P x t.";
-    }
-}
-
-// ==========================================
-// 5. LOGIKA GENERATOR UTAMA (FINISH)
-// ==========================================
-window.openModalGenerator = function() {
-    uiLayer.classList.remove('hidden');
-    challengeContent.classList.add('hidden');
-    materiContent.classList.remove('hidden');
-    btnNext.classList.add('hidden'); // Sembunyikan tombol lanjut karena ini garis akhir
-    
-    npcName.innerText = "Generator Listrik Utama";
-    
-    // Mengecek apakah pemain sudah menyelesaikan ketiga tantangan
-    if (window.gameState.punyaResistor && window.gameState.punyaBaterai && window.gameState.punyaInti) {
-        materiContent.innerHTML = `
-            <h3 style="color: green;">🎉 MISI BERHASIL! 🎉</h3>
-            <p>Kamu telah memasukkan Resistor Emas, Baterai Paralel, dan Generator Inti ke dalam mesin.</p>
-            <p><strong>Generator Utama berhasil menyala! Listrik kembali mengalir ke seluruh pulau!</strong></p>
-            <p>Terima kasih telah bermain ElectroQuest 3D. Kamu sekarang adalah ahli Fisika Listrik Dinamis!</p>
-        `;
-    } else {
-        materiContent.innerHTML = `
-            <h3 style="color: red;">⚠️ Akses Ditolak! ⚠️</h3>
-            <p>Generator ini kekurangan daya. Kamu harus mendatangi ke-3 Post NPC dan menyelesaikan tantangan mereka untuk mendapatkan komponen yang dibutuhkan!</p>
-            <ul style="text-align: left; margin-top: 15px;">
-                <li>${window.gameState.punyaResistor ? '✅' : '❌'} Resistor Emas (Post 1: Kotak Kuning)</li>
-                <li>${window.gameState.punyaBaterai ? '✅' : '❌'} Baterai Paralel (Post 2: Kotak Hijau)</li>
-                <li>${window.gameState.punyaInti ? '✅' : '❌'} Generator Inti (Post 3: Kotak Merah)</li>
-            </ul>
-        `;
-    }
-}
+animate();
