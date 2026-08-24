@@ -15,53 +15,134 @@ document.getElementById('game-container').appendChild(renderer.domElement);
 const light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(5, 10, 5);
 scene.add(light);
-scene.add(new THREE.AmbientLight(0x404040)); // Cahaya merata
+scene.add(new THREE.AmbientLight(0x606060)); // Cahaya merata
 
 // ==========================================
-// 3. MEMBUAT LINGKUNGAN (GROUND)
+// 3. MEMBUAT LINGKUNGAN YANG KAYA
 // ==========================================
-const planeGeo = new THREE.PlaneGeometry(50, 50);
-const planeMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Warna rumput hijau
+// Lantai Rumput
+const planeGeo = new THREE.PlaneGeometry(100, 100);
+const planeMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); 
 const plane = new THREE.Mesh(planeGeo, planeMat);
-plane.rotation.x = -Math.PI / 2; // Memutar lantai agar mendatar
+plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
+// Membuat Jalan Utama (Aspal) membentang ke depan
+const roadGeo = new THREE.PlaneGeometry(8, 60);
+const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333 }); 
+const road = new THREE.Mesh(roadGeo, roadMat);
+road.rotation.x = -Math.PI / 2;
+road.position.set(0, 0.05, -15); // Sedikit di atas rumput agar tidak glitch
+scene.add(road);
+
+// Fungsi Pembuat Pohon Sederhana
+function createTree(x, z) {
+    const tree = new THREE.Group();
+    
+    // Batang pohon
+    const trunkGeo = new THREE.CylinderGeometry(0.3, 0.5, 2);
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); 
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    trunk.position.y = 1;
+    tree.add(trunk);
+    
+    // Daun pohon
+    const leavesGeo = new THREE.ConeGeometry(2, 4, 8);
+    const leavesMat = new THREE.MeshStandardMaterial({ color: 0x006400 }); 
+    const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+    leaves.position.y = 3.5;
+    tree.add(leaves);
+    
+    tree.position.set(x, 0, z);
+    scene.add(tree);
+}
+
+// Menanam pohon di pinggir jalan
+createTree(5, -2);
+createTree(-5, -6);
+createTree(6, -10);
+createTree(-6, -15);
+createTree(5, -25);
+createTree(-5, -30);
+
+// Fungsi Pembuat Bangunan Lab di Latar Belakang
+function createBuilding(x, z, width, height, depth, colorHex) {
+    const buildGeo = new THREE.BoxGeometry(width, height, depth);
+    const buildMat = new THREE.MeshStandardMaterial({ color: colorHex });
+    const building = new THREE.Mesh(buildGeo, buildMat);
+    building.position.set(x, height / 2, z);
+    scene.add(building);
+}
+
+// Membangun beberapa gedung di kejauhan
+createBuilding(-15, -20, 10, 15, 10, 0x555555); 
+createBuilding(15, -25, 8, 10, 8, 0x888888);  
+
 // ==========================================
-// 4. MEMBUAT PEMAIN, NPC & GENERATOR
+// 4. PEMAIN, NPC & LOADER MODEL 3D
 // ==========================================
-// Pemain (Kotak Biru)
-const playerGeo = new THREE.BoxGeometry(1, 1, 1);
-const playerMat = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+// Inisialisasi GLTFLoader (untuk memuat aset .glb jika ada nanti)
+const loader = new THREE.GLTFLoader();
+
+// --- PEMAIN (Menggunakan sistem Hitbox) ---
+const playerGeo = new THREE.BoxGeometry(1, 2, 1);
+const playerMat = new THREE.MeshBasicMaterial({ visible: false }); // Hitbox disembunyikan
 const player = new THREE.Mesh(playerGeo, playerMat);
-player.position.y = 0.5;
+player.position.set(0, 1, 5); // Posisi awal (start)
 scene.add(player);
 
-// Geometri dasar untuk semua NPC
-const npcGeo = new THREE.BoxGeometry(1.5, 2, 1.5);
+// Visual Fallback untuk pemain (Kotak Biru) - Hapus bagian ini jika sudah pakai model 3D nyata
+const fallbackPlayerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({color: 0x0000ff}));
+player.add(fallbackPlayerMesh); 
 
-// Post 1: NPC Prof. Ohm (Kotak Kuning)
-const npc1Mat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
-const npc1 = new THREE.Mesh(npcGeo, npc1Mat);
-npc1.position.set(5, 1, -5);
-scene.add(npc1);
+/* 
+// CONTOH CARA MEMASUKKAN MODEL 3D PEMAIN (Hapus tanda komentar jika punya asetnya)
+loader.load('assets/player.glb', function(gltf) {
+    const model = gltf.scene;
+    model.scale.set(1, 1, 1); 
+    model.position.y = -1; 
+    player.add(model); 
+    player.remove(fallbackPlayerMesh); // Hapus kotak biru saat model berhasil dimuat
+});
+*/
 
-// Post 2: NPC Teknisi Kirchhoff (Kotak Hijau)
-const npc2Mat = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-const npc2 = new THREE.Mesh(npcGeo, npc2Mat);
-npc2.position.set(-5, 1, -5);
-scene.add(npc2);
+// Fungsi Helper untuk Membuat NPC
+function createNPC(x, z, fallbackColor, modelPath = null) {
+    // Buat hitbox transparan
+    const npcHitbox = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 2, 1.5),
+        new THREE.MeshBasicMaterial({ visible: false }) 
+    );
+    npcHitbox.position.set(x, 1, z);
+    scene.add(npcHitbox);
 
-// Post 3: NPC Dr. Joule (Kotak Merah)
-const npc3Mat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-const npc3 = new THREE.Mesh(npcGeo, npc3Mat);
-npc3.position.set(0, 1, -12);
-scene.add(npc3);
+    if (modelPath) {
+        // Load model 3D jika path tersedia
+        loader.load(modelPath, function(gltf) {
+            const model = gltf.scene;
+            model.scale.set(1, 1, 1);
+            model.position.y = -1;
+            npcHitbox.add(model);
+        });
+    } else {
+        // Visual kotak sementara jika belum ada model 3D
+        const visual = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2, 1.5), new THREE.MeshStandardMaterial({color: fallbackColor}));
+        npcHitbox.add(visual);
+    }
+    
+    return npcHitbox;
+}
 
-// GENERATOR UTAMA (GARIS FINISH - Silinder Putih)
+// Buat ke-3 NPC di lokasi yang berbeda di sepanjang jalan
+const npc1 = createNPC(4, -5, 0xffff00, null);  // Post 1: Kuning
+const npc2 = createNPC(-4, -15, 0x00ff00, null); // Post 2: Hijau
+const npc3 = createNPC(4, -25, 0xff0000, null);  // Post 3: Merah
+
+// --- GENERATOR UTAMA (Garis Finish) ---
 const genGeo = new THREE.CylinderGeometry(2, 2, 4, 32); 
-const genMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+const genMat = new THREE.MeshStandardMaterial({ color: 0x00ffff }); // Warna biru menyala (Cyan)
 const mainGenerator = new THREE.Mesh(genGeo, genMat);
-mainGenerator.position.set(10, 2, -15); 
+mainGenerator.position.set(0, 2, -35); // Di ujung jalan
 scene.add(mainGenerator);
 
 // Mengatur Posisi Awal Kamera
@@ -73,38 +154,36 @@ camera.lookAt(player.position);
 // ==========================================
 const keys = { w: false, a: false, s: false, d: false };
 
-// Deteksi tombol keyboard ditekan
 document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
 document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
-// Deteksi interaksi khusus saat tombol "E" ditekan
 document.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'e') {
         const uiLayer = document.getElementById('ui-layer');
         
-        // Mencegah tombol 'E' memicu sesuatu jika UI popup sedang terbuka
+        // Jangan eksekusi jika ada pop-up UI terbuka
         if (!uiLayer.classList.contains('hidden')) return;
 
-        // Hitung jarak pemain ke masing-masing NPC & Generator
+        // Cek jarak pemain ke NPC dan Generator
         const distToNpc1 = player.position.distanceTo(npc1.position);
         const distToNpc2 = player.position.distanceTo(npc2.position);
         const distToNpc3 = player.position.distanceTo(npc3.position);
         const distToGen = player.position.distanceTo(mainGenerator.position); 
         
-        // Buka UI yang sesuai jika pemain cukup dekat
+        // Panggil fungsi UI berdasarkan jarak terdekat (radius < 3)
         if (distToNpc1 < 3) {
             openModalOhm();
         } else if (distToNpc2 < 3) {
             openModalKirchhoff();
         } else if (distToNpc3 < 3) {
             openModalJoule();
-        } else if (distToGen < 4) { // Jarak interaksi generator disetel sedikit lebih jauh (4)
+        } else if (distToGen < 4) { // Area interaksi generator lebih luas
             openModalGenerator();
         }
     }
 });
 
-// Update ukuran render jika jendela browser di-resize
+// Sesuaikan render saat layar di-resize
 window.addEventListener('resize', () => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -117,20 +196,23 @@ window.addEventListener('resize', () => {
 function animate() {
     requestAnimationFrame(animate);
 
-    // Logika Pergerakan (WASD)
-    const speed = 0.1;
+    // Kecepatan jalan pemain
+    const speed = 0.15;
+    
+    // Pergerakan WASD
     if (keys.w) player.position.z -= speed;
     if (keys.s) player.position.z += speed;
     if (keys.a) player.position.x -= speed;
     if (keys.d) player.position.x += speed;
 
-    // Kamera selalu mengikuti pemain
+    // Kamera mengikuti dari belakang atas pemain
     camera.position.x = player.position.x;
-    camera.position.z = player.position.z + 10;
+    camera.position.y = player.position.y + 4;
+    camera.position.z = player.position.z + 8;
+    camera.lookAt(player.position);
 
-    // Render ulang layar terus-menerus
     renderer.render(scene, camera);
 }
 
-// Mulai loop animasi
+// Mulai permainan
 animate();
