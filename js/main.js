@@ -91,10 +91,6 @@ const player = new THREE.Mesh(playerGeo, playerMat);
 player.position.set(0, 1, 5); // Posisi awal (start)
 scene.add(player);
 
-// Visual Fallback untuk pemain (Kotak Biru) - Hapus bagian ini jika sudah pakai model 3D nyata
-const fallbackPlayerMesh = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({color: 0x0000ff}));
-player.add(fallbackPlayerMesh); 
-
 
 // CONTOH CARA MEMASUKKAN MODEL 3D PEMAIN (Hapus tanda komentar jika punya asetnya)
 loader.load('assets/player.glb', function(gltf) {
