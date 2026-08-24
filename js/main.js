@@ -133,9 +133,9 @@ function createNPC(x, z, fallbackColor, modelPath = null) {
 }
 
 // Buat ke-3 NPC di lokasi yang berbeda di sepanjang jalan
-const npc1 = createNPC(4, -5, 0xffff00, npc1.glb);  // Post 1: Kuning
-const npc2 = createNPC(-4, -15, 0x00ff00, npc2.glb); // Post 2: Hijau
-const npc3 = createNPC(4, -25, 0xff0000, npc3.glb);  // Post 3: Merah
+const npc1 = createNPC(4, -5, 0xffff00, 'npc1.glb');  // Post 1: Kuning
+const npc2 = createNPC(-4, -15, 0x00ff00, 'npc2.glb'); // Post 2: Hijau
+const npc3 = createNPC(4, -25, 0xff0000, 'npc3.glb');  // Post 3: Merah
 
 // --- GENERATOR UTAMA (Garis Finish) ---
 const genGeo = new THREE.CylinderGeometry(2, 2, 4, 32); 
