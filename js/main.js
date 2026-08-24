@@ -71,3 +71,27 @@ function animate() {
     renderer.render(scene, camera);
 }
 animate();
+// --- Cari bagian // Buat NPC / Post 1 di js/main.js, lalu tambahkan kode ini di bawahnya: ---
+
+// Buat NPC / Post 2 (Rangkaian Seri & Paralel)
+const npc2Mat = new THREE.MeshStandardMaterial({ color: 0x00ff00 }); // Warna Hijau
+const npc2 = new THREE.Mesh(npcGeo, npc2Mat);
+npc2.position.set(-5, 1, -5); // Posisikan di koordinat yang berbeda
+scene.add(npc2);
+
+
+// --- Cari bagian // Interaksi dengan "E" di js/main.js, lalu ubah blok tersebut menjadi seperti ini: ---
+document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 'e') {
+        
+        const distToNpc1 = player.position.distanceTo(npc1.position);
+        const distToNpc2 = player.position.distanceTo(npc2.position);
+        
+        if (distToNpc1 < 3) {
+            openModalOhm(); // Buka tantangan Break Code
+        } 
+        else if (distToNpc2 < 3) {
+            openModalKirchhoff(); // Buka tantangan Teka-Teki Silang
+        }
+    }
+});
